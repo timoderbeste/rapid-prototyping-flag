@@ -1,75 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import 'rbx/index.css';
-import { Button, Container, Title } from 'rbx';
 
-const schedule = {
-  title: "CS Courses for 2018-2019",
-  courses: [
-    {
-      id: "F101",
-      title: "Computer Science: Concepts, Philosophy, and Connections",
-      meets: "MWF 11:00-11:50",
-    },
-    {
-      id: "F110",
-      title: "Intro Programming for non-majors",
-      meets: "MWF 10:00-10:50",
-    },
-    {
-      id: "F111",
-      title: "Fundamentals of Computer Programming I",
-      meets: "MWF 13:00-13:50",
-    },
-    {
-      id: "F211",
-      title: "Fundamentals of Computer Programming II",
-      meets: "TuTh 12:30-13:50",
-    }
-  ]
+import 'rbx/index.css';
+import { Button, Container, Title, Message } from 'rbx';
+
+import firebase from 'firebase/app';
+import 'firebase/database';
+import 'firebase/auth';
+import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+
+import { db } from './components/utils';
+import CourseList from './components/CourseList';
+import { timeParts } from './components/Course/times';
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    signInSuccessWithAuthResult: () => false
+  }
 };
 
-const terms = { F: 'Fall', W: 'Winter', S: 'Spring'};
-
-const getCourseTerm = course => (
-  terms[course.id.charAt(0)]
+const Welcome = ({ user }) => (
+  <Message color="info">
+    <Message.Header>
+      Welcome, {user.displayName}
+      <Button primary onClick={() => firebase.auth().signOut()}>
+        Log out
+      </Button>
+    </Message.Header>
+  </Message>
 );
 
-const getCourseNumber = course => (
-  course.id.slice(1, 4)
+const SignIn = () => (
+  <StyledFirebaseAuth
+    uiConfig={uiConfig}
+    firebaseAuth={firebase.auth()}
+  />
 );
 
-const Course = ({ course }) => (
-  <Button>
-    { getCourseTerm(course) } CS { getCourseNumber(course) }: { course.title }
-  </Button>
+const Banner = ({ user, title }) => (
+  <React.Fragment>
+    { user ? <Welcome user={ user } /> : <SignIn /> }
+    <Title>{ title || '[loading...]' }</Title>
+  </React.Fragment>
 );
 
-const CourseList = ({ courses }) => (
-  <Button.Group>
-    { courses.map(course => <Course key={ course.id } course={ course } />) }
-  </Button.Group>
-);
+const addCourseTimes = course => ({
+  ...course,
+  ...timeParts(course.meets)
+});
 
-const Banner = ({ title }) => (
-  <Title>{ title || '[loading...]' }</Title>
-);
+const addScheduleTimes = schedule => ({
+  title: schedule.title,
+  courses: Object.values(schedule.courses).map(addCourseTimes)
+});
 
 const App = () =>  {
   const [schedule, setSchedule] = useState({ title: '', courses: [] });
-  const url = 'https://www.cs.northwestern.edu/academics/courses/394/data/cs-courses.php';
+  const [user, setUser] = useState(null);
   useEffect(() => {
-    const fetchSchedule = async () => {
-      const response = await fetch(url);
-      if (!response.ok) throw response;
-      const json = await response.json();
-      setSchedule(json);
+    const handleData = snap => {
+      if (snap.val()) setSchedule(addScheduleTimes(snap.val()));
     }
-    fetchSchedule();
+    db.on('value', handleData, error => alert(error));
+    return () => {
+      db.off('value', handleData);
+    };
+  }, []);
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged(setUser);
   }, []);
   return (
     <Container>
-      <Banner title={ schedule.title }/>
-      <CourseList courses={ schedule.courses } />
+      <Banner title={ schedule.title } user={ user }/>
+      <CourseList courses={ schedule.courses } user={ user } />
     </Container>
   );
 };
