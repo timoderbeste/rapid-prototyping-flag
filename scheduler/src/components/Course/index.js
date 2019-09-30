@@ -1,2 +1,2 @@
 export { default, buttonColor } from './Course';
-export { getCourseTerm } from './times';
+export { getCourseTerm, timeParts } from './times';

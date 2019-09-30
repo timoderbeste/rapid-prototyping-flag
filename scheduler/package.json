@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@types/react": "^16.9.4",
     "firebase": "^7.0.0",
     "npm": "^6.0.1",
     "rbx": "^2.2.0",
