@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import 'rbx/index.css';
 import { Card, Button } from 'rbx';
 
-const CartItem = ({ product, size, amount, removeFromCart }) => {
+const CartItem = ({ product, size, amount, removeFromCartFunc }) => {
+
   return (
     <Card>
       <Card.Header>
@@ -25,7 +26,11 @@ const CartItem = ({ product, size, amount, removeFromCart }) => {
       <Card.Footer>
         <div style={{textAlign: 'center', width: '100%'}}>
           <p>{ '$' + product.price + ' x ' + amount + ' = ' + amount * product.price}</p>
-          <Button onClick={ () => removeFromCart(product.sku, size) } rounded>
+          <Button onClick={ () => {
+              removeFromCartFunc(product.sku, size);
+              console.log('Delete button clicked!')
+            }
+          } rounded>
             -
           </Button>
         </div>

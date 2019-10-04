@@ -12,6 +12,12 @@ const App = () => {
   const [shoppingCartFlag, setShoppingCartFlag] = useState(false);
   const [shoppingCartContent, setShoppingCartContent] = useState([]);
 
+  const useForceUpdate = () => {
+    const [value, set] = useState(true); //boolean state
+    return () => set(value => !value); // toggle the state to force render
+  }
+  const forceUpdate = useForceUpdate();
+
   const products = Object.values(data);
   const id2product = {}
   let i;
@@ -53,6 +59,8 @@ const App = () => {
       content[content.length - 1][size] += 1;
     }
     setShoppingCartContent(content);
+    setShoppingCartFlag(true);
+    forceUpdate();
   };
 
   useEffect(() => {
@@ -84,6 +92,7 @@ const App = () => {
       content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
     }
     setShoppingCartContent(content);
+    forceUpdate();
   };
 
   return (
@@ -123,7 +132,7 @@ const App = () => {
           <Modal.Background />
           <Modal.Content>
             <Box>
-              <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
+              <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCartFunc={ removeFromCart }/>
             </Box>
           </Modal.Content>
           <Modal.Close onClick={ () => setShoppingCartFlag(false) } />
@@ -138,7 +147,6 @@ const App = () => {
             </Column>
           )}
         </Column.Group>
-        <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
       </Container>
   );
 };
