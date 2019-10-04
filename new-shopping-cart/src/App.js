@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import 'rbx/index.css';
-import { Column, Container, Navbar, Button, Icon, Image } from 'rbx';
+import { Column, Container, Navbar, Button, Icon, Modal } from 'rbx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 
 import ProductCard from './components/ProductCard';
+import ShoppingCart  from './components/ShoppingCart';
 
 const App = () => {
   const [data, setData] = useState({});
+  const [shoppingCartFlag, setShoppingCartFlag] = useState(false);
+  const [shoppingCartContent, setShoppingCartContent] = useState([]);
   const products = Object.values(data);
   useEffect(() => {
     const fetchProducts = async () => {
@@ -41,16 +44,23 @@ const App = () => {
                 </Navbar.Dropdown>
               </Navbar.Item>
               <Navbar.Item>
-                <Button color='black'>
+                <Button color='black' onClick={ () => setShoppingCartFlag(true) }>
                   <Icon>
                     <FontAwesomeIcon icon={ faShoppingCart }/>
                   </Icon>
-
                 </Button>
               </Navbar.Item>
             </Navbar.Segment>
           </Navbar.Menu>
         </Navbar>
+
+        <Modal active={ shoppingCartFlag }>
+          <Modal.Background />
+          <Modal.Content>
+            <ShoppingCart />
+          </Modal.Content>
+          <Modal.Close onClick={ () => setShoppingCartFlag(false) } />
+        </Modal>
 
         <Column.Group multiline>
           <Column size='full'>
