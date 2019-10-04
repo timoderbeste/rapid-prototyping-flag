@@ -11,6 +11,7 @@ const App = () => {
   const [data, setData] = useState({});
   const [shoppingCartFlag, setShoppingCartFlag] = useState(false);
   const [shoppingCartContent, setShoppingCartContent] = useState([]);
+  const [inventory, setInventory] = useState({});
 
   const useForceUpdate = () => {
     const [value, set] = useState(true); //boolean state
@@ -31,24 +32,37 @@ const App = () => {
       const json = await response.json();
       setData(json);
     };
+
     fetchProducts();
   }, []);
 
-  const addToCart = (productId, size) => {
+  useEffect(() => {
+    const fetchInventory = async () => {
+      const response = await fetch('./data/inventory.json');
+      const json = await response.json();
+      setInventory(json);
+    };
+
+    fetchInventory();
+  }, []);
+
+  const inCart = (productId) => {
     let i;
-    let found = false;
-    let content = shoppingCartContent;
-    for (i = 0; i < content.length; i += 1) {
-      if (content[i].productId === productId) {
-        found = true;
-        break;
+    for (i = 0; i < shoppingCartContent.length; i += 1) {
+      if (shoppingCartContent[i].productId === productId) {
+        return i;
       }
     }
-    if (found) {
-      content[i][size] += 1;
+    return -1;
+  }
+
+  const addToCart = (productId, size) => {
+    const i = inCart(productId);
+    if (i !== -1) {
+      shoppingCartContent[i][size] += 1;
     }
     else {
-      content.push({
+      shoppingCartContent.push({
         productId: productId,
         product: id2product[productId],
         's': 0,
@@ -56,9 +70,9 @@ const App = () => {
         'l': 0,
         'xl': 0,
       });
-      content[content.length - 1][size] += 1;
+      shoppingCartContent[shoppingCartContent.length - 1][size] += 1;
     }
-    setShoppingCartContent(content);
+    setShoppingCartContent(shoppingCartContent);
     setShoppingCartFlag(true);
     forceUpdate();
   };
@@ -68,20 +82,12 @@ const App = () => {
   });
 
   const removeFromCart = (productId, size) => {
-    let i;
-    let found = false;
-    let content = shoppingCartContent;
-    for (i = 0; i < content.length; i += 1) {
-      if (content[i].productId === productId) {
-        found = true;
-        break;
-      }
-    }
-    if (found) {
-      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+    const i = inCart(productId);
+    if (i !== -1) {
+      shoppingCartContent[i][size] = shoppingCartContent[i][size] > 0 ? shoppingCartContent[i][size] - 1 : 0;
     }
     else {
-      content.push({
+      shoppingCartContent.push({
         productId: productId,
         product: id2product[productId],
         's': 0,
@@ -89,10 +95,22 @@ const App = () => {
         'l': 0,
         'xl': 0,
       });
-      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+      shoppingCartContent[i][size] = shoppingCartContent[i][size] > 0 ? shoppingCartContent[i][size] - 1 : 0;
     }
-    setShoppingCartContent(content);
+    setShoppingCartContent(shoppingCartContent);
     forceUpdate();
+  };
+
+  const computeAmountLeft = (productId) => {
+    const idx = inCart(productId);
+    const amountLeft = {
+      's': inventory[productId] ? (idx === -1 ? (inventory[productId]['S']) : (inventory[productId]['S'] - shoppingCartContent[idx]['s'])) : 0,
+      'm': inventory[productId] ? (idx === -1 ? (inventory[productId]['M']) : (inventory[productId]['M'] - shoppingCartContent[idx]['m'])) : 0,
+      'l': inventory[productId] ? (idx === -1 ? (inventory[productId]['L']) : (inventory[productId]['L'] - shoppingCartContent[idx]['l'])) : 0,
+      'xl': inventory[productId] ? (idx === -1 ? (inventory[productId]['XL']) : (inventory[productId]['XL'] - shoppingCartContent[idx]['xl'])) : 0,
+    };
+    console.log(amountLeft);
+    return amountLeft;
   };
 
   return (
@@ -106,10 +124,6 @@ const App = () => {
           </Navbar.Brand>
           <Navbar.Menu>
             <Navbar.Segment align="end">
-              <Navbar.Item><Button rounded color='danger'>S</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>M</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>L</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>XL</Button></Navbar.Item>
               <Navbar.Item dropdown>
                 <Navbar.Link>Ordered By</Navbar.Link>
                 <Navbar.Dropdown>
@@ -143,7 +157,7 @@ const App = () => {
           </Column>
           {products.map(product =>
             <Column size='one-third' key={ product.sku }>
-              <ProductCard product={ product } addToCartFunc={ addToCart } />
+              <ProductCard product={ product } amountLeft={ computeAmountLeft(product.sku) } addToCartFunc={ addToCart } />
             </Column>
           )}
         </Column.Group>
