@@ -3,7 +3,7 @@ import React from 'react';
 import 'rbx/index.css';
 import { Card, Dropdown, Button } from 'rbx';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, addToCart }) => {
   return (
     <Card>
       <Card.Header>
@@ -29,10 +29,10 @@ const ProductCard = ({ product }) => {
             </Dropdown.Trigger>
             <Dropdown.Menu>
               <Dropdown.Content>
-                <Dropdown.Item>S</Dropdown.Item>
-                <Dropdown.Item>M</Dropdown.Item>
-                <Dropdown.Item>L</Dropdown.Item>
-                <Dropdown.Item>XL</Dropdown.Item>
+                <Dropdown.Item onClick={ () => addToCart(product.sku, 's') }>S</Dropdown.Item>
+                <Dropdown.Item onClick={ () => addToCart(product.sku, 'm') }>M</Dropdown.Item>
+                <Dropdown.Item onClick={ () => addToCart(product.sku, 'l') }>L</Dropdown.Item>
+                <Dropdown.Item onClick={ () => addToCart(product.sku, 'xl') }>XL</Dropdown.Item>
               </Dropdown.Content>
             </Dropdown.Menu>
           </Dropdown>

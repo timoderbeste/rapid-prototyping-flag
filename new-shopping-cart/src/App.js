@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import 'rbx/index.css';
-import { Column, Container, Navbar, Button, Icon, Modal } from 'rbx';
+import { Column, Container, Navbar, Button, Icon, Modal, Box } from 'rbx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 
@@ -11,7 +11,14 @@ const App = () => {
   const [data, setData] = useState({});
   const [shoppingCartFlag, setShoppingCartFlag] = useState(false);
   const [shoppingCartContent, setShoppingCartContent] = useState([]);
+
   const products = Object.values(data);
+  const id2product = {}
+  let i;
+  for (i = 0; i < products.length; i += 1) {
+    id2product[products[i].sku] = products[i];
+  }
+
   useEffect(() => {
     const fetchProducts = async () => {
       const response = await fetch('./data/products.json');
@@ -20,6 +27,41 @@ const App = () => {
     };
     fetchProducts();
   }, []);
+
+  const addToCart = (productId, size) => {
+    let i;
+    let found = false;
+    let content = shoppingCartContent;
+    for (i = 0; i < content.length; i += 1) {
+      if (content[i].productId === productId) {
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      content[i][size] += 1;
+    }
+    else {
+      content.push({
+        productId: productId,
+        product: id2product[productId],
+        's': 0,
+        'm': 0,
+        'l': 0,
+        'xl': 0,
+      });
+      content[content.length - 1][size] += 1;
+    }
+    setShoppingCartContent(content);
+  };
+
+  useEffect(() => {
+    console.log('shoppingCartContent changed', shoppingCartContent);
+  });
+
+  const removeFromCart = (productId, size) => {
+
+  }
 
   return (
       <Container as='div' style={ {width: '100%', paddingTop: '20px'} }>
@@ -57,7 +99,9 @@ const App = () => {
         <Modal active={ shoppingCartFlag }>
           <Modal.Background />
           <Modal.Content>
-            <ShoppingCart />
+            <Box>
+              <ShoppingCart shoppingCartContent={ shoppingCartContent } removeFromCart={ removeFromCart }/>
+            </Box>
           </Modal.Content>
           <Modal.Close onClick={ () => setShoppingCartFlag(false) } />
         </Modal>
@@ -67,10 +111,11 @@ const App = () => {
           </Column>
           {products.map(product =>
             <Column size='one-third' key={ product.sku }>
-              <ProductCard product={ product } />
+              <ProductCard product={ product } addToCart={ addToCart.bind(this) } />
             </Column>
           )}
         </Column.Group>
+        <ShoppingCart shoppingCartContent={ shoppingCartContent } removeFromCart={ removeFromCart }/>
       </Container>
   );
 };
