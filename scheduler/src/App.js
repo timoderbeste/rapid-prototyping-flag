@@ -71,6 +71,7 @@ const App = () =>  {
   }, []);
   useEffect(() => {
     firebase.auth().onAuthStateChanged(setUser);
+    console.log(user);
   }, []);
   return (
     <Container>
