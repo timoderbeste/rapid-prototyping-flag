@@ -18,7 +18,7 @@ const CartItem = ({ product, size, amount, removeFromCart }) => {
       </Card.Image>
       <Card.Content>
         <div style={{textAlign: 'center', width: '100%'}}>
-          <p>{ 'Size: ' + size.upper() }</p>
+          <p>{ 'Size: ' + size.toUpperCase() }</p>
           <p>{ 'Amount: ' + amount }</p>
         </div>
       </Card.Content>

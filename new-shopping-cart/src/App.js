@@ -60,8 +60,31 @@ const App = () => {
   });
 
   const removeFromCart = (productId, size) => {
-
-  }
+    let i;
+    let found = false;
+    let content = shoppingCartContent;
+    for (i = 0; i < content.length; i += 1) {
+      if (content[i].productId === productId) {
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+    }
+    else {
+      content.push({
+        productId: productId,
+        product: id2product[productId],
+        's': 0,
+        'm': 0,
+        'l': 0,
+        'xl': 0,
+      });
+      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+    }
+    setShoppingCartContent(content);
+  };
 
   return (
       <Container as='div' style={ {width: '100%', paddingTop: '20px'} }>
@@ -100,7 +123,7 @@ const App = () => {
           <Modal.Background />
           <Modal.Content>
             <Box>
-              <ShoppingCart shoppingCartContent={ shoppingCartContent } removeFromCart={ removeFromCart }/>
+              <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
             </Box>
           </Modal.Content>
           <Modal.Close onClick={ () => setShoppingCartFlag(false) } />
@@ -111,11 +134,11 @@ const App = () => {
           </Column>
           {products.map(product =>
             <Column size='one-third' key={ product.sku }>
-              <ProductCard product={ product } addToCart={ addToCart.bind(this) } />
+              <ProductCard product={ product } addToCartFunc={ addToCart } />
             </Column>
           )}
         </Column.Group>
-        <ShoppingCart shoppingCartContent={ shoppingCartContent } removeFromCart={ removeFromCart }/>
+        <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
       </Container>
   );
 };
