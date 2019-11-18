@@ -3,7 +3,7 @@ import React from 'react';
 import 'rbx/index.css';
 import { Card, Dropdown, Button } from 'rbx';
 
-const ProductCard = ({ product, addToCartFunc }) => {
+const ProductCard = ({ product, amountLeft, addToCartFunc }) => {
   return (
     <Card>
       <Card.Header>
@@ -29,10 +29,10 @@ const ProductCard = ({ product, addToCartFunc }) => {
             </Dropdown.Trigger>
             <Dropdown.Menu>
               <Dropdown.Content>
-                <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 's') }>S</Dropdown.Item>
-                <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'm') }>M</Dropdown.Item>
-                <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'l') }>L</Dropdown.Item>
-                <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'xl') }>XL</Dropdown.Item>
+                { amountLeft['s'] !== 0 ? <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 's') }>S - { amountLeft['s'] } Left</Dropdown.Item> : null }
+                { amountLeft['m'] !== 0 ? <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'm') }>M - { amountLeft['m'] } Left</Dropdown.Item> : null }
+                { amountLeft['l'] !== 0 ? <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'l') }>L - { amountLeft['l'] } Left</Dropdown.Item> : null }
+                { amountLeft['xl'] !== 0 ? <Dropdown.Item onClick={ () => addToCartFunc(product.sku, 'xl') }>XL - { amountLeft['xl'] } Left</Dropdown.Item> : null }
               </Dropdown.Content>
             </Dropdown.Menu>
           </Dropdown>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import 'rbx/index.css';
 
@@ -6,7 +6,7 @@ import { Title, Column, Container } from 'rbx';
 
 import CartItem from './CartItem';
 
-const ShoppingCart = ({ shoppingCartContentProp, removeFromCart }) => {
+const ShoppingCart = ({ shoppingCartContentProp, removeFromCartFunc }) => {
   const contents = [];
   let i;
   for (i = 0; i < shoppingCartContentProp.length; i += 1) {
@@ -26,6 +26,10 @@ const ShoppingCart = ({ shoppingCartContentProp, removeFromCart }) => {
     }
   }
 
+  useEffect(() => {
+    console.log('shoppingCartContentProp changed', shoppingCartContentProp);
+  });
+
   return (
     <Container>
       <Title>Shopping Cart</Title>
@@ -33,8 +37,8 @@ const ShoppingCart = ({ shoppingCartContentProp, removeFromCart }) => {
         <Column size='full'>
         </Column>
         {contents.map(content =>
-          <Column size='one-third' key={ content[0].sku }>
-            <CartItem product={ content[0] } size={ content[1] } amount={ content[2] } removeFromCart={ removeFromCart } />
+          <Column size='full' key={ content[0].sku }>
+            <CartItem product={ content[0] } size={ content[1] } amount={ content[2] } removeFromCartFunc={ removeFromCartFunc } />
           </Column>
         )}
       </Column.Group>

@@ -1,16 +1,80 @@
 import React, { useEffect, useState } from 'react';
 import 'rbx/index.css';
-import { Column, Container, Navbar, Button, Icon, Modal, Box } from 'rbx';
+import { Column, Container, Navbar, Button, Icon, Modal, Box, Message, Title } from 'rbx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 
+import firebase from 'firebase/app';
+import 'firebase/database';
+import 'firebase/auth';
+import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+
 import ProductCard from './components/ProductCard';
 import ShoppingCart  from './components/ShoppingCart';
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0wE6Ay_yd0OvkoTdAjq3K-AxSUaRY7Fc",
+  authDomain: "rapid-shopping-cart.firebaseapp.com",
+  databaseURL: "https://rapid-shopping-cart.firebaseio.com",
+  projectId: "rapid-shopping-cart",
+  storageBucket: "",
+  messagingSenderId: "559910122031",
+  appId: "1:559910122031:web:be086c28ab212fbb9a0cda",
+  measurementId: "G-DVZ49S4ZY6"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database().ref();
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    signInSuccessWithAuthResult: () => false
+  }
+};
+
+const Welcome = ({ user }) => (
+  <Message color="info">
+    <Message.Header>
+      Welcome, {user.displayName}
+      <Button primary onClick={() => firebase.auth().signOut()}>
+        Log out
+      </Button>
+    </Message.Header>
+  </Message>
+);
+
+const SignIn = () => (
+  <StyledFirebaseAuth
+    uiConfig={uiConfig}
+    firebaseAuth={firebase.auth()}
+  />
+);
+
+const Banner = ({ user, title }) => (
+  <React.Fragment>
+    { user ? <Welcome user={ user } /> : <SignIn /> }
+    <Title>{ title || '[loading...]' }</Title>
+  </React.Fragment>
+);
 
 const App = () => {
   const [data, setData] = useState({});
   const [shoppingCartFlag, setShoppingCartFlag] = useState(false);
   const [shoppingCartContent, setShoppingCartContent] = useState([]);
+  const [inventory, setInventory] = useState({});
+  const [user, setUser] = useState(null);
+  let userRef = null;
+
+  const useForceUpdate = () => {
+    const [value, set] = useState(true); //boolean state
+    return () => set(value => !value); // toggle the state to force render
+  }
+  const forceUpdate = useForceUpdate();
 
   const products = Object.values(data);
   const id2product = {}
@@ -20,29 +84,62 @@ const App = () => {
   }
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const response = await fetch('./data/products.json');
-      const json = await response.json();
-      setData(json);
-    };
-    fetchProducts();
+    firebase.auth().onAuthStateChanged(setUser);
+    forceUpdate();
   }, []);
 
-  const addToCart = (productId, size) => {
+  useEffect(() => {
+    const handleData = snap => {
+      if (snap.val()) {
+        setData(snap.val()['products']);
+        setInventory(snap.val()['inventory']);
+        if (user) {
+          if (!userRef) {
+            console.log('No userRef')
+            userRef = firebase.database().ref('users/' + user.uid);
+            if (!snap.val()['users'][user.uid]) {
+              console.log('Shopping cart does not exist');
+              userRef.child('shopping_cart').set([]);
+            }
+            else {
+              console.log('Shopping cart exists');
+              setShoppingCartContent(snap.val()['users'][user.uid]['shopping_cart']);
+            }
+          }
+          else {
+            if (!snap.val()['users'][user.uid]) {
+              setShoppingCartContent(snap.val()['users'][user.uid]['shopping_cart']);
+            }
+          }
+        }
+        else {
+          setShoppingCartContent([]);
+        }
+      };
+    }
+    db.on('value', handleData, error => alert(error));
+    return () => {
+      db.off('value', handleData);
+    };
+  }, [user]);
+
+  const inCart = (productId) => {
     let i;
-    let found = false;
-    let content = shoppingCartContent;
-    for (i = 0; i < content.length; i += 1) {
-      if (content[i].productId === productId) {
-        found = true;
-        break;
+    for (i = 0; i < shoppingCartContent.length; i += 1) {
+      if (shoppingCartContent[i].productId === productId) {
+        return i;
       }
     }
-    if (found) {
-      content[i][size] += 1;
+    return -1;
+  }
+
+  const addToCart = (productId, size) => {
+    const i = inCart(productId);
+    if (i !== -1) {
+      shoppingCartContent[i][size] += 1;
     }
     else {
-      content.push({
+      shoppingCartContent.push({
         productId: productId,
         product: id2product[productId],
         's': 0,
@@ -50,9 +147,17 @@ const App = () => {
         'l': 0,
         'xl': 0,
       });
-      content[content.length - 1][size] += 1;
+      shoppingCartContent[shoppingCartContent.length - 1][size] += 1;
     }
-    setShoppingCartContent(content);
+    if (user) {
+      if (!userRef) {
+        userRef = firebase.database().ref('users/' + user.uid);
+      }
+      userRef.child('shopping_cart').set(shoppingCartContent);
+    }
+    setShoppingCartContent(shoppingCartContent);
+    setShoppingCartFlag(true);
+    forceUpdate();
   };
 
   useEffect(() => {
@@ -60,20 +165,12 @@ const App = () => {
   });
 
   const removeFromCart = (productId, size) => {
-    let i;
-    let found = false;
-    let content = shoppingCartContent;
-    for (i = 0; i < content.length; i += 1) {
-      if (content[i].productId === productId) {
-        found = true;
-        break;
-      }
-    }
-    if (found) {
-      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+    const i = inCart(productId);
+    if (i !== -1) {
+      shoppingCartContent[i][size] = shoppingCartContent[i][size] > 0 ? shoppingCartContent[i][size] - 1 : 0;
     }
     else {
-      content.push({
+      shoppingCartContent.push({
         productId: productId,
         product: id2product[productId],
         's': 0,
@@ -81,13 +178,32 @@ const App = () => {
         'l': 0,
         'xl': 0,
       });
-      content[i][size] = content[i][size] > 0 ? content[i][size] - 1 : 0;
+      shoppingCartContent[i][size] = shoppingCartContent[i][size] > 0 ? shoppingCartContent[i][size] - 1 : 0;
     }
-    setShoppingCartContent(content);
+    if (user) {
+      if (!userRef) {
+        userRef = firebase.database().ref('users/' + user.uid);
+      }
+      userRef.child('shopping_cart').set(shoppingCartContent);
+    }
+    setShoppingCartContent(shoppingCartContent);
+    forceUpdate();
+  };
+
+  const computeAmountLeft = (productId) => {
+    const idx = inCart(productId);
+    const amountLeft = {
+      's': inventory[productId] ? (idx === -1 ? (inventory[productId]['S']) : (inventory[productId]['S'] - shoppingCartContent[idx]['s'])) : 0,
+      'm': inventory[productId] ? (idx === -1 ? (inventory[productId]['M']) : (inventory[productId]['M'] - shoppingCartContent[idx]['m'])) : 0,
+      'l': inventory[productId] ? (idx === -1 ? (inventory[productId]['L']) : (inventory[productId]['L'] - shoppingCartContent[idx]['l'])) : 0,
+      'xl': inventory[productId] ? (idx === -1 ? (inventory[productId]['XL']) : (inventory[productId]['XL'] - shoppingCartContent[idx]['xl'])) : 0,
+    };
+    return amountLeft;
   };
 
   return (
       <Container as='div' style={ {width: '100%', paddingTop: '20px'} }>
+        <Banner title={ "My Shop" } user={ user }/>
         <Navbar fixed='top' as='div' style={ {paddingLeft: '50px', paddingRight: '50px', paddingTop: '10px'} }>
         <Navbar.Brand>
           <Navbar.Item href="#">
@@ -97,10 +213,6 @@ const App = () => {
           </Navbar.Brand>
           <Navbar.Menu>
             <Navbar.Segment align="end">
-              <Navbar.Item><Button rounded color='danger'>S</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>M</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>L</Button></Navbar.Item>
-              <Navbar.Item><Button rounded color='danger'>XL</Button></Navbar.Item>
               <Navbar.Item dropdown>
                 <Navbar.Link>Ordered By</Navbar.Link>
                 <Navbar.Dropdown>
@@ -109,7 +221,7 @@ const App = () => {
                 </Navbar.Dropdown>
               </Navbar.Item>
               <Navbar.Item>
-                <Button color='black' onClick={ () => setShoppingCartFlag(true) }>
+                <Button color='black' onClick={ () => { forceUpdate(); setShoppingCartFlag(true); } }>
                   <Icon>
                     <FontAwesomeIcon icon={ faShoppingCart }/>
                   </Icon>
@@ -123,7 +235,7 @@ const App = () => {
           <Modal.Background />
           <Modal.Content>
             <Box>
-              <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
+              <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCartFunc={ removeFromCart }/>
             </Box>
           </Modal.Content>
           <Modal.Close onClick={ () => setShoppingCartFlag(false) } />
@@ -134,11 +246,10 @@ const App = () => {
           </Column>
           {products.map(product =>
             <Column size='one-third' key={ product.sku }>
-              <ProductCard product={ product } addToCartFunc={ addToCart } />
+              <ProductCard product={ product } amountLeft={ computeAmountLeft(product.sku) } addToCartFunc={ addToCart } />
             </Column>
           )}
         </Column.Group>
-        <ShoppingCart shoppingCartContentProp={ shoppingCartContent } removeFromCart={ removeFromCart }/>
       </Container>
   );
 };
