@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Camera } from 'expo';
+import { Camera } from 'expo-camera';
 import { askAsync, CAMERA, AUDIO_RECORDING } from 'expo-permissions';
 
 import styles from './styles';
