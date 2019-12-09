@@ -9,7 +9,7 @@ import 'firebase/auth';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 import { db } from './components/utils';
-import { CourseList } from './components/CourseList';
+import CourseList from './components/CourseList';
 import { timeParts } from './components/Course';
 
 const uiConfig = {
