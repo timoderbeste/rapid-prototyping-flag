@@ -1,4 +1,9 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project creates an example online shop that let users browse available cloths and add available items to their shopping cart.
+The inventary data are stored on Firebase and authentication is also done through Firebase. 
+Users can first log in with their Google account. 
+Then, they can view their shopping cart by click the button at the top right of the screen. 
+They can also browse and add available items by choosing a size that is available. 
+Once they selected an item, the shopping cart will pop up automatically as confirmation. 
 
 ## Available Scripts
 
